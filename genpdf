@@ -1,0 +1,12 @@
+#!/bin/bash +x
+TEXDOC="${1%.*}"  # This removes the extension from the filename passed as the first argument
+echo "Generating $TEXDOC.pdf"
+pdflatex $TEXDOC >/dev/null 2>&1
+if ls $TEXDOC-*.asy >/dev/null 2>&1; then
+    for ASYFILE in $TEXDOC-*.asy; do
+        echo "Generating $ASYFILE"
+        asy "$ASYFILE"
+    done
+    echo "Regenerating $TEXDOC.pdf"
+    pdflatex $TEXDOC >/dev/null 2>&1
+fi

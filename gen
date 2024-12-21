@@ -1,0 +1,44 @@
+#!/bin/bash +x
+
+# Determine the full path of the input file and extract directory and base name
+if [[ "$1" == *.tex ]]; then
+    TEXDOC="${1%.*}"  # Remove .tex extension
+else
+    TEXDOC="$1"
+fi
+
+# Determine the directory and the base filename
+DIR=$(dirname "$TEXDOC")
+BASENAME=$(basename "$TEXDOC")
+
+# Navigate to the directory
+cd "$DIR"
+
+echo "Generating $BASENAME.pdf"
+# Run pdflatex and capture output in a variable
+output=$(pdflatex -interaction=nonstopmode "$BASENAME.tex")
+status=$?
+echo "$output" | grep Warning | grep -v "LastPage" | grep -v "pdf' not found" | grep -v "undefined ref" | grep -v "may have changed" | grep -v "has changed" | grep -v "Rerun to get"
+
+if [[ $status != 0 ]]; then
+    echo 'ERROR running pdflatex'
+else
+    if ls "$BASENAME"-*.asy >/dev/null 2>&1; then
+        for ASYFILE in "$BASENAME"-*.asy; do
+            # echo "Generating $ASYFILE"
+            asy "$ASYFILE"
+        done
+        # echo "Generating $BASENAME.pdf (second pass)"
+        # Run pdflatex again and capture output
+        output=$(pdflatex -interaction=nonstopmode "$BASENAME.tex")
+        status=$?
+        echo "$output" | grep Warning | grep -v "may have changed"
+
+        if [[ $status != 0 ]]; then
+            echo 'ERROR on final execution of pdflatex'
+        fi
+    fi
+fi
+
+# Remove only the temporary files created by this script
+rm -f "$BASENAME"-*.asy "$BASENAME.out" "$BASENAME.log" "$BASENAME.aux" "$BASENAME.pre" "$BASENAME"-*.pdf

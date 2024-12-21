@@ -1,0 +1,5 @@
+#!/bin/bash
+for FILE in "$1-*.asy"; do
+  echo "Processing $FILE"
+  asy "$FILE"
+done
